@@ -1,1 +1,1 @@
-var code_rahasia = "admin#1234"
+var code_rahasia = "admin#1234";
