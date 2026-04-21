@@ -1,0 +1,327 @@
+# pengaturan ip address di winbox
+
+ip -> address -> + -> tambahkan ip dan port
+ip -> routes -> + -> tambahkan gateway
+ip -> dhcp server -> + -> dhcp server -> next
+ip -> dns -> atur dns -> allow remote access
+
+ip -> firewall -> + -> general:
+
+ke tab general
+chain : scrnat
+out interface : ether 5
+
+ke tab action
+action : masquerade
+
+ok -> +
+
+ke tab general
+chain : dstnat
+dst address : 172.16.100.xx
+protocol : 6 tcp
+dst port : 9090
+
+ke tab action
+action : dstnat
+to address : 192.168.xx.2
+to port : 80
+
+ke tools -> ping - ping to : 8.8.8.8 -> start
+
+jika merespon berarti berhasil
+
+stop
+
+keluar
+
+
+#install proxpmox
+
+masukan -> usb - tekan ctrl+alt+del
+
+next
+
+country : indonesian
+timezone : asia/makassar
+password :  12345678
+email: bayulodik@gmail.com
+
+next
+
+host name : pve.example.com
+gateway : 192.168. xx.1
+ip address : 192.168.xx.4       /29
+dns server : 8.8.8.8
+
+install
+
+note: jika proses penginstalan tidak berhasil, keluar dan coba install lagi
+
+pve login : root
+password : 12345678
+
+keluar dan buka chrome
+
+# pembuatan vm web-xx dan dbbxx
+
+masukan url : https://192.168.xx.4:8006
+
+jika muncul warning tekan advenced dan tekan tulisan procced to 192.168.xx.4:8006
+
+username : root
+password : 12345678
+
+tambahkan tab baru di chrome
+masukan url : http://www.smkn1-luwuk.sch.id/index.php
+
+masuk ke os -> dvd_iso
+yang paling bawah klik kanan download lalu copy link address
+
+kembali ke tab sebelumnya
+
+teekan datacenter lalu tekan local(pve) 
+cari download from url
+
+url : paste dari link yang di copy
+
+lalu tekan download
+
+tunggu sampai selesai
+
+ke pve tekan crate vm
+
+name : web-xx
+
+iso image : ubuntu_24.04.3
+
+disk size : 50
+
+cpu type : kvm64
+firewalll nonaktifkan
+
+selesai
+
+ke pve dan crate vm lagi
+
+name : db-xx
+
+dan sama seperti web-xx tadi
+
+ke data center lalu ke 100(web-xx)
+
+tekan console
+
+-> try to install debian
+[english]
+[done]
+[done]
+[ens18 eth]
+[edit ipv4]
+ipv4 method : [manual]
+
+subnet : 192.168.xx.0/29
+
+address : 192.168.xx.2
+
+gateway : 192.168.xx.1
+
+server : 8.8.8.8
+
+[save]
+[done]
+[done]
+[done]
+[continue without update]
+
+( ) set up this disk
+
+[done]
+[continue]
+
+yourname : bayu lodik
+
+server name : web-11
+
+username : bayu
+
+password : 12345678
+confirm-password : 12345678
+[done]
+[continue]
+(x) install openssh server
+[done]
+[done] -> tunggu sampai selesai
+
+[reboot now] 
+
+close console
+
+ke tab hardware lalu ke cd/dvd lalu edit
+
+tekan do not use any media lalu ok
+
+klik anak panah bawah di console lalu tekan reset
+
+ke pve lalu ke 101(db-xx) lalu tekan console
+
+lakukan hal yang sama seperti web-xx tapi di bagian ipv4 method: [manual] ganti seperti ini
+
+subnet : 192.168.xx.0/29
+
+address : 192.168.11.3
+
+gateway : 192.168.xx.1
+
+server : 8.8.8.8
+[save]
+
+ke pve lalu tekan 101(db-xx)
+
+tekan console
+
+user : bayu
+
+password : 12345678 
+
+sudo apt update
+sudo install maria-db-server
+sudo mysql -u root
+create user 'umaria'@'%' identified by '12345678';
+
+create database dblms default character set utf8mb4 collate utf8mb4_unicode_ci;
+
+grant all privileges on dblms.* to 'umaria'@'%'
+
+\q
+
+sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+
+blind address : 0.0.0.0
+
+ctrl+x -> y -> enter
+
+sudo reboot
+
+keluar
+
+ke pve lalu ke 100(web-xx) lalu tekan console
+
+login : bayu
+password : 12345678
+
+sudo apt update
+
+sudo apt install apache2
+
+keluar
+
+buka browser dan masukan url 192.168.xx.2 
+
+jika terbuka website berarti berhasil, jika tidak you sucks asf
+
+kembali ke console web-xx
+
+sudo apt instal php libapache2-mod-php php-xml php-mbstring php-mysql
+
+y
+
+sudo nano /etc/php/8.3/apache2/php.ini
+
+pagedown 9x sampai ketemu dan ubah ;max-input-vars = 5000 dan hapus tanda ;
+
+ctrl+x -> y -> enter
+
+keluar
+
+buka chrome dan ketik url moodle.org
+ke page download -> latest release
+pilih yang paling atas dan .tgz klik kanan pada tombol download dan copy link address
+
+paste link tersebut di notepad
+tambahkan /direct/ pada /download.php/ 
+copy link tersebut
+
+kembali ke console web
+
+sudo wget <paste link yang di copy sebelumnya>
+
+cd /var/www
+sudo cp ~/moodle-latest-501.tgz .
+
+sudo tar -zxvf moodle <tekan tombol tab>
+
+sudo chown -R www-data: www-data moodle
+
+sudo find moodle -type d -exec chmod 755 {}\;
+sudo find moodle -type f -exec chmod 644 {}\;
+
+sudo mkdir dataweb
+sudo chown www-data: data-web dataweb
+
+sudo chmod 755 dataweb
+
+sudo nano /etc/apache2/sites-available/000-default.conf
+
+ubah jadi DocumentRoot /var/www/moodle/public
+
+ctrl+x -> y -> enter
+
+sudo sudo systemctl restart apache2
+
+keluar
+
+buka browser dan ketik 192.168.xx.2/install.php
+
+klik next
+
+data directory: /var/www/dataweb
+klik next
+
+type: mariadb
+
+klik next
+
+database host : 192.168.xx.3
+database name : dblms
+database user : umaria
+database password : 12345678
+
+klik next
+
+continue
+
+keluar dan kembali ke console web-xx
+
+sudo apt install php-curl php-zip php-gd php-intl php-soap
+
+keluar 
+
+kembali ke browser dan page sebelumnya
+
+refresh page tersebut
+
+klik continue
+
+tunggu sampai selesai
+
+klik continue
+
+username : bayu
+password : T3k@je2026
+city/town : luwuk
+country : indonesian
+timezone : asia/makassar
+
+klik update profile
+
+fullsite name : smk negeri 1 luwuk
+
+short site : smkn1 luwuk
+
+klik save changes
+
+email suport : bayulodik@gmail.com
+
+save changes
+
